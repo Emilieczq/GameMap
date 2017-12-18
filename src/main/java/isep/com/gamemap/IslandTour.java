@@ -161,14 +161,16 @@ public class IslandTour {
     
     /**
      * VisitableAdjacencyWeightedDiGraphWithHeuristic ??
+     * not finished
      */
     private static VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> makeCostGraph(int[][] costGrid) {
         VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> res =
-                new VisitableAdjacencyWeightedDiGraphWithHeuristic<SquareCell, Integer>(new DistanceHeuristic<SqureCell>(){
+                new VisitableAdjacencyWeightedDiGraphWithHeuristic<SquareCell, Integer>(new DistanceHeuristic<SquareCell>(){
                     public int distance(SquareCell c0, SquareCell c1){
                         return c0.manhattanDistanceTo(c1);
                     }
                 });
+        return res;
     }
     
     private static void drawBackground(String filename, int w, int h, int gridSize, Color gridColorOrNull) {
