@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 class PlottingVisitor implements Visitor<SquareCell> {
 
@@ -185,7 +186,7 @@ public class IslandTour {
 
     private static void drawDots(int w, int h, int gridSize, Collection<SquareCell> cells, Color color, boolean isFilled) {
         PlottingVisitor v = new PlottingVisitor(w, h, gridSize, color, isFilled ? "filledCircle" : "circle");
-        for(SqureCell cell : cells){
+        for(SquareCell cell : cells){
             v.visit(cell);
         }
     }
