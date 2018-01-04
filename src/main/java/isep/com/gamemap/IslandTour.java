@@ -35,6 +35,7 @@ class PlottingVisitor implements Visitor<SquareCell> {
         this.shape = shape;
     }
 
+    @Override
     public boolean visit(SquareCell cell) {
         StdDraw.setPenColor(color);
         double x = cell.c * gridSize + gridSize / 2;
@@ -62,9 +63,6 @@ class PlottingVisitor implements Visitor<SquareCell> {
 
 public class IslandTour {
 
-    /**
-     *
-     */
     public static enum ColorData {
 
         UNKNOWN(0x000000), OCEAN(0x44447a), LAKE(0x336699), BEACH(0xa09077), SNOW(0xffffff),
@@ -138,14 +136,14 @@ public class IslandTour {
         int imgWidth = image.getWidth();
         int imgHeight = image.getHeight();
         int[][] res = new int[imgHeight / gridSize][imgWidth / gridSize];
-        for (int  r = 0; r != res.length;++r){
+        for (int r = 0; r != res.length; ++r) {
             for (int c = 0; c != res[r].length; ++c) {
                 for (int y = r * gridSize; y != (r + 1) * gridSize; ++y) {
-                    for(int x = c*gridSize; x != (c+1)*gridSize; ++x) {
-                        try{
-                            res[r][c] = saturatingAddPos(res[r][c], colorToCost.get(image.getRGB(x,y)& 0xFFFFFF));
-                        }catch(Exception e){
-                            System.err.println("e:"+e+"\nfor color "+String.format("0x%06%", (image.getRGB(x,y)& 0xFFFFFF)));
+                    for (int x = c * gridSize; x != (c + 1) * gridSize; ++x) {
+                        try {
+                            res[r][c] = saturatingAddPos(res[r][c], colorToCost.get(image.getRGB(x, y) & 0xFFFFFF));
+                        } catch (Exception e) {
+                            System.err.println("e:" + e + "\nfor color " + String.format("0x%06%", (image.getRGB(x, y) & 0xFFFFFF)));
                         }
                     }
                 }
@@ -154,25 +152,41 @@ public class IslandTour {
         }
         return res;
     }
-    
+
     private static boolean isInGrid(int[][] grid, SquareCell c) {
         return (c.r >= 0) && (c.r < grid.length) && (c.c >= 0) && (c.c < grid[c.r].length);
     }
-    
+
     /**
-     * VisitableAdjacencyWeightedDiGraphWithHeuristic ??
-     * not finished
+     * VisitableAdjacencyWeightedDiGraphWithHeuristic ?? not finished
      */
     private static VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> makeCostGraph(int[][] costGrid) {
-        VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> res =
-                new VisitableAdjacencyWeightedDiGraphWithHeuristic<SquareCell, Integer>(new DistanceHeuristic<SquareCell>(){
-                    public int distance(SquareCell c0, SquareCell c1){
+        VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> res
+                = new VisitableAdjacencyWeightedDiGraphWithHeuristic<SquareCell, Integer>(new DistanceHeuristic<SquareCell>() {
+                    public int distance(SquareCell c0, SquareCell c1) {
                         return c0.manhattanDistanceTo(c1);
                     }
                 });
+        int edgeId = 0;
+        for (int r = 0; r != costGrid.length; ++r) {
+            for (int c = 0; c != costGrid[r].length; ++c) {
+                SquareCell current = new SquareCell(r, c);
+                res.addVertex(current);
+                int[][] deltas = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+                for (int i = 0; i != deltas.length; ++i) {
+                    SquareCell n = new SquareCell(current.r + deltas[i][0],
+                            current.c + deltas[i][1]);
+                    if (isInGrid(costGrid, n)
+                            && (costGrid[current.r][current.c] != Integer.MAX_VALUE)
+                            && (costGrid[n.r][n.c] != Integer.MAX_VALUE)) {
+                        res.addEdge(edgeId++, current, n, saturatingAddPos(costGrid[current.r][current.c], costGrid[n.r][n.c]));
+                    }
+                }
+            }
+        }
         return res;
     }
-    
+
     private static void drawBackground(String filename, int w, int h, int gridSize, Color gridColorOrNull) {
         StdDraw.picture(w / 2, h / 2, filename, w, h);
         if (gridColorOrNull != null) {
@@ -188,11 +202,11 @@ public class IslandTour {
 
     private static void drawDots(int w, int h, int gridSize, Collection<SquareCell> cells, Color color, boolean isFilled) {
         PlottingVisitor v = new PlottingVisitor(w, h, gridSize, color, isFilled ? "filledCircle" : "circle");
-        for(SquareCell cell : cells){
+        for (SquareCell cell : cells) {
             v.visit(cell);
         }
     }
-    
+
     private static Collection<SquareCell> readTour(int gridSize, int imgWidth, int imgHeight, InputStream is) throws IOException {
         List<SquareCell> res = new ArrayList<SquareCell>();
         Scanner sc = new Scanner(is);
@@ -203,7 +217,7 @@ public class IslandTour {
         }
         return res;
     }
-    
+
     private static void displayDistance(int gridSize, int imgWidth, int imgHeight,
             String filename,
             VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> distances) {
@@ -213,7 +227,7 @@ public class IslandTour {
             if (StdDraw.isMousePressed()) {
                 change = !current.equals(src);
                 src = current;
-            }else{
+            } else {
                 change = !current.equals(dest);
                 dest = current;
             }
@@ -225,17 +239,19 @@ public class IslandTour {
             }
         }
     }
-    
-    private static Collection<SquareCell> shortestTour(VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> distances, 
-            Collection<SquareCell> verticesToVisit){
+
+    private static Collection<SquareCell> shortestTour(VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> distances,
+            Collection<SquareCell> verticesToVisit) {
         //TODO
         return new ArrayList<SquareCell>();
     }
-    
+
     public static void main(String args[]) throws IOException, InterruptedException {
         StdDraw.enableDoubleBuffering();
-        String filename = args[0];
-        int gridSize = Integer.parseInt(args[1]);
+//        String filename = args[0];
+        String filename = "/Users/Zhenqi/Documents/NetBeansProjects/GameMap/src/main/resources/map.png"; // have a try
+//        int gridSize = Integer.parseInt(args[1]);
+        int gridSize = 10; // have a try
         File file = new File(filename);
         BufferedImage image = ImageIO.read(file);
         int imgWidth = image.getWidth();

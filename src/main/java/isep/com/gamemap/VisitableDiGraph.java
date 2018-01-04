@@ -7,7 +7,8 @@ package isep.com.gamemap;
 
 /**
  *
- * @author Zhenqi
+ * @param <Vertex>
+ * @param <Edge>
  */
 public interface VisitableDiGraph<Vertex, Edge> extends DiGraph<Vertex, Edge> {
     void setVerticesVisitor(Visitor<Vertex> vv);

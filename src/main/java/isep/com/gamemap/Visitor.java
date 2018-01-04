@@ -7,7 +7,6 @@ package isep.com.gamemap;
 
 /**
  *
- * @author Zhenqi
  */
 public interface Visitor<V> {
     boolean visit(V v);
