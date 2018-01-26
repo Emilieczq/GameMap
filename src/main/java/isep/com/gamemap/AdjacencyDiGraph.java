@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 
@@ -139,7 +140,7 @@ public class AdjacencyDiGraph<Vertex, Edge> implements DiGraph<Vertex, Edge> {
 
     @Override
     public List<Vertex> shortestPath(Vertex src, Vertex dest) { //returns the path with the minimal sum of the weights
-        if (src == null || dest == null || !areConnected(src, dest)) {
+        if (src == null || dest == null) {
             return null;
         }
 
@@ -175,7 +176,7 @@ public class AdjacencyDiGraph<Vertex, Edge> implements DiGraph<Vertex, Edge> {
         return shortestPath;
 
     }
-
+    
     @Override
     public List<Vertex> shortestPath(String src, String dest) {
         return shortestPath(getVertexByName(src), getVertexByName(dest));

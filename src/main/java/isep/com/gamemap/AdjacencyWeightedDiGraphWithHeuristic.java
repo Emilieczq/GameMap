@@ -12,51 +12,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.Set;
 
-public class AdjacencyWeightedDiGraph<Vertex, Edge> extends AdjacencyDiGraph<Vertex, Edge> implements WeightedDiGraph<Vertex, Edge> {
-    private Map<Edge, Integer> edgeToWeight= new HashMap<Edge, Integer>();
-    Map<Vertex, Vertex> vertexToPrevious;
-    public void addEdge(Edge e, Vertex src, Vertex dest) {
-        addEdge(e,src,dest, 1);
-    }
-    @Override
-    public void addEdge(Edge e, Vertex src, Vertex dest, int weigth) {
-        super.addEdge(e, src, dest);
-        edgeToWeight.put(e, weigth);
-    }
+/**
+ *
+ * @author Zhenqi
+ */
+public class AdjacencyWeightedDiGraphWithHeuristic<Vertex, Edge> extends AdjacencyWeightedDiGraph<Vertex, Edge> implements WeightedDiGraph<Vertex, Edge> {
 
+    DistanceHeuristic h;
+    AdjacencyWeightedDiGraphWithHeuristic(){
+    }
+    public void setHeuristic(DistanceHeuristic h){
+        this.h=h;
+    }
     @Override
-    public int getWeight(Edge e) {
-        return edgeToWeight.get(e);
-    }
-    
-    /**
-     * 
-     * @param v1
-     * @param v2
-     * @return 
-     */
-    public Edge getEdge(Vertex v1, Vertex v2){
-       for(Edge e:super.getOutgoingEdges(v1)){
-           if(super.getDestination(e).equals(v2)){
-               return e;
-           }
-       }
-       throw new RuntimeException("Something wrong");
-    }
-    
-    public Set<Vertex> getVisitedVertices(){
-        return vertexToPrevious.keySet();
-    }
-    
-    @Override
-    public List<Vertex> shortestPath(Vertex src, Vertex dest){
+    public List<Vertex> shortestPath(Vertex src, Vertex dest) {
         Map<Vertex, Integer> vertexToDistance = new HashMap<>();
         Queue<Vertex> toVisit = new PriorityQueue<>(new MappedComparator((HashMap) vertexToDistance));
-        vertexToPrevious = new HashMap<>();
+        Map<Vertex, Vertex> vertexToPrevious = new HashMap<>();
 
-        if (src == null || dest == null ) {
+        if (src == null || dest == null) {
             return null;
         }
 
@@ -71,13 +46,14 @@ public class AdjacencyWeightedDiGraph<Vertex, Edge> extends AdjacencyDiGraph<Ver
             visiting = toVisit.remove();
             if (vertexToPrevious.containsKey(visiting)) {
                 for (Vertex v : getAdjacentVertices(visiting)) {
-                    int newDistance = vertexToDistance.get(visiting)
-                            + getWeight(getEdge(v, visiting));
+                    int newDistance = vertexToDistance.get(visiting)-h.distance(visiting, dest)
+                            + getWeight(getEdge(v, visiting)) + h.distance(v,dest);
                     if ((!vertexToPrevious.containsKey(v))
                             || (newDistance < vertexToDistance.get(v))) {
                         vertexToDistance.put(v, newDistance);
                         vertexToPrevious.put(v, visiting);
                         toVisit.add(v);
+                        
                     }
                 }
             }
@@ -90,6 +66,6 @@ public class AdjacencyWeightedDiGraph<Vertex, Edge> extends AdjacencyDiGraph<Ver
 
         Collections.reverse(shortestPath); // reverse to get the correct order
         return shortestPath;
-    }
 
+    }
 }

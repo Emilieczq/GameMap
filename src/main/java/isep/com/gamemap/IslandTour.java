@@ -115,7 +115,7 @@ public class IslandTour {
         float hRatio = (float) possibleH / imgH;
         float ratio = Math.min(wRatio, hRatio);
         System.err.println(ratio);
-        return new int[]{(int) (imgW + ratio), (int) (imgH + ratio)};
+        return new int[]{(int) (imgW * ratio), (int) (imgH * ratio)}; ////////
     }
 
     public static void drawGrid(int imgWidth, int imgHeight, int gridSize) {
@@ -161,12 +161,13 @@ public class IslandTour {
      * VisitableAdjacencyWeightedDiGraphWithHeuristic ?? not finished
      */
     private static VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> makeCostGraph(int[][] costGrid) {
-        VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> res
-                = new VisitableAdjacencyWeightedDiGraphWithHeuristic<SquareCell, Integer>(new DistanceHeuristic<SquareCell>() {
-                    public int distance(SquareCell c0, SquareCell c1) {
-                        return c0.manhattanDistanceTo(c1);
-                    }
-                });
+//        VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> res // add WithHeuristic
+//                = new VisitableAdjacencyWeightedDiGraphWithHeuristic<SquareCell, Integer>(new DistanceHeuristic<SquareCell>() {
+//                    public int distance(SquareCell c0, SquareCell c1) {
+//                        return c0.manhattanDistanceTo(c1);
+//                    }
+//                });
+        VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> res = new VisitableAdjacencyWeightedDiGraph<SquareCell, Integer>();
         int edgeId = 0;
         for (int r = 0; r != costGrid.length; ++r) {
             for (int c = 0; c != costGrid[r].length; ++c) {
@@ -208,7 +209,7 @@ public class IslandTour {
     }
 
     private static Collection<SquareCell> readTour(int gridSize, int imgWidth, int imgHeight, InputStream is) throws IOException {
-        List<SquareCell> res = new ArrayList<SquareCell>();
+        List<SquareCell> res = new ArrayList<>();
         Scanner sc = new Scanner(is);
         while (sc.hasNext()) {
             final int x = sc.nextInt();
@@ -219,8 +220,8 @@ public class IslandTour {
     }
 
     private static void displayDistance(int gridSize, int imgWidth, int imgHeight,
-            String filename,
-            VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> distances) {
+            String filename, VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> distances) {
+
         for (SquareCell src = new SquareCell(0, 0), dest = new SquareCell(0, 0);;) {
             boolean change = false;
             SquareCell current = new SquareCell((int) ((imgHeight - StdDraw.mouseY()) / gridSize), (int) (StdDraw.mouseX() / gridSize));
@@ -233,25 +234,57 @@ public class IslandTour {
             }
             if (change) {
                 drawBackground(filename, imgWidth, imgHeight, gridSize, null);
-                distances.setVerticesVisitor(new PlottingVisitor(imgWidth, imgHeight, gridSize, StdDraw.BLACK, "circle"));
+//                distances.setVerticesVisitor(new PlottingVisitor(imgWidth, imgHeight, gridSize, StdDraw.BLACK, "circle"));
                 drawDots(imgWidth, imgHeight, gridSize, distances.shortestPath(src, dest), StdDraw.RED, true);
+
+                PlottingVisitor p = new PlottingVisitor(imgWidth, imgHeight, gridSize, StdDraw.BLACK, "circle");
+                distances.setVerticesVisitor(p);
+                for (SquareCell vv : distances.getVisitedVertices()) {
+                    p.visit(vv);
+                }
+
                 StdDraw.show();
             }
         }
     }
 
-    private static Collection<SquareCell> shortestTour(VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> distances,
-            Collection<SquareCell> verticesToVisit) {
-        //TODO
-        return new ArrayList<SquareCell>();
+    private static Collection<SquareCell> shortestTour(VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> distances, Collection<SquareCell> verticesToVisit) {
+        List<SquareCell> vertices = new ArrayList<>(); // vertices to visit
+        List<SquareCell> shortestTour = new ArrayList<>();
+        for (SquareCell v : verticesToVisit) {
+            vertices.add(v);
+        }
+        SquareCell src = vertices.remove(0); // A
+
+        int cnt = 0;
+        while (vertices.size() > 0) {
+            int minweights = Integer.MAX_VALUE;
+            List<SquareCell> minvertices = null;
+            SquareCell nextsrc = vertices.get(0);
+            for (SquareCell v : vertices) {
+                List<SquareCell> vertices2 = distances.shortestPath(src, v);
+                int weights = 0;
+                for (int i = 0; i < vertices2.size() - 1; i++) {
+                    weights += distances.getWeight(distances.getEdge(vertices2.get(i), vertices2.get(i + 1)));
+                }
+                if (weights < minweights) {
+                    minweights = weights;
+                    nextsrc = v;
+                    minvertices = vertices2;
+                }
+            }
+            cnt++;
+            src = nextsrc;
+            vertices.remove(nextsrc);
+            shortestTour.addAll(minvertices);
+        }
+        return shortestTour;
     }
 
     public static void main(String args[]) throws IOException, InterruptedException {
         StdDraw.enableDoubleBuffering();
-//        String filename = args[0];
-        String filename = "/Users/Zhenqi/Documents/NetBeansProjects/GameMap/src/main/resources/map.png"; // have a try
-//        int gridSize = Integer.parseInt(args[1]);
-        int gridSize = 10; // have a try
+        String filename = args[0];
+        int gridSize = Integer.parseInt(args[1]);
         File file = new File(filename);
         BufferedImage image = ImageIO.read(file);
         int imgWidth = image.getWidth();
@@ -262,15 +295,16 @@ public class IslandTour {
         StdDraw.setCanvasSize(wh[0], wh[1]);
         StdDraw.setXscale(0, imgWidth);
         StdDraw.setYscale(0, imgHeight);
+
         VisitableAdjacencyWeightedDiGraph<SquareCell, Integer> distances = makeCostGraph(makeCostGrid(image, gridSize));
         if (args.length < 3) { // distance distances
             displayDistance(gridSize, imgHeight, imgWidth, filename, distances);
         } else {// display tour
             Collection<SquareCell> tour = readTour(gridSize, imgWidth, imgHeight, new FileInputStream(new File(args[2])));
             drawBackground(filename, imgWidth, imgHeight, gridSize, null);
-            drawDots(imgWidth, imgHeight, gridSize, tour, StdDraw.RED, true);
             Collection<SquareCell> result = shortestTour(distances, tour);
             drawDots(imgWidth, imgHeight, gridSize, result, StdDraw.ORANGE, true);
+            drawDots(imgWidth, imgHeight, gridSize, tour, StdDraw.RED, true); // to make red visible, moved this line from the previous place to here
             StdDraw.show();
         }
     }
